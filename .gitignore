@@ -1,0 +1,10 @@
+.DS_Store
+**/.DS_Store
+Thumbs.db
+.env
+.env.*
+!.env.example
+storage/*.sqlite
+storage/*.sqlite-*
+*.log
+_agents/
