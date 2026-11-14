@@ -34,3 +34,40 @@ function verificar_credenciales(string $usuario, string $password): ?array
     }
     return password_verify($password, (string) $operador['password_hash']) ? $operador : null;
 }
+
+function iniciar_sesion(array $operador): void
+{
+    session_regenerate_id(true);
+    $_SESSION['operador'] = [
+        'id' => (int) $operador['id'],
+        'nombre' => (string) $operador['nombre'],
+        'usuario' => (string) $operador['usuario'],
+        'rol' => (string) $operador['rol'],
+        'ventanilla' => (int) $operador['ventanilla'],
+    ];
+}
+
+function cerrar_sesion(): void
+{
+    $_SESSION = [];
+    if (ini_get('session.use_cookies')) {
+        $p = session_get_cookie_params();
+        setcookie(session_name(), '', time() - 42000, $p['path'], $p['domain'], $p['secure'], $p['httponly']);
+    }
+    session_destroy();
+}
+
+function operador_actual(): ?array
+{
+    return isset($_SESSION['operador']['id']) ? $_SESSION['operador'] : null;
+}
+
+function require_login(): array
+{
+    $operador = operador_actual();
+    if ($operador === null) {
+        set_flash('Inicia sesión para entrar al panel.', 'error');
+        redirect('login.php');
+    }
+    return $operador;
+}
