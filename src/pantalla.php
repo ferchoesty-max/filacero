@@ -20,18 +20,22 @@ declare(strict_types=1);
 const PANTALLA_DEMO_ESCENARIOS = ['mixto', 'llamado', 'vacio'];
 
 //lee ?demo= con lista blanca. En CLI o con valor desconocido usa 'mixto'
-function pantalla_demo_escenario(): string
-{
+function pantalla_demo_escenario(): ?string {
     $valor = $_GET['demo'] ?? null;
     if (is_string($valor) && in_array($valor, PANTALLA_DEMO_ESCENARIOS, true)) {
         return $valor;
     }
-    return 'mixto';
+    return null; 
+    // usar null para desactivar el modo demo y usar la base de datos real, 
+    // 'mixto' para demo con varios turnos llamados, 
+    // 'llamado' para demo con un turno llamado, 
+    // 'vacio' para demo sin llamados
 }
 
 // armamos un turno con la forma del contrato
-function pantalla_demo_turno(int $id, int $servicioId, string $prefijo, string $servicio, int $consecutivo, int $ventanilla, string $hora): array
-{
+function pantalla_demo_turno(int $id, int $servicioId, string $prefijo, 
+                            string $servicio, int $consecutivo, int $ventanilla, 
+                            string $hora): array{
     return [
         'id'              => $id,
         'servicio_id'     => $servicioId,
@@ -47,8 +51,7 @@ function pantalla_demo_turno(int $id, int $servicioId, string $prefijo, string $
 }
 
 /** Turnos llamados (sin ordenar) */
-function pantalla_demo_llamados(string $escenario): array
-{
+function pantalla_demo_llamados(string $escenario): array {
     return match ($escenario) {
         'vacio'   => [],
         'llamado' => [
@@ -63,8 +66,7 @@ function pantalla_demo_llamados(string $escenario): array
 }
 
 // pendientes [id, prefijo, nombre, descripcion, pendientes]
-function pantalla_demo_espera(string $escenario): array
-{
+function pantalla_demo_espera(string $escenario): array{
     $pendientes = match ($escenario) {
         'vacio'   => [2, 0, 1, 0],
         'llamado' => [1, 0, 2, 0],
@@ -102,12 +104,29 @@ function pantalla_demo_espera(string $escenario): array
  * llaves: id, servicio_id, fecha, consecutivo, folio, estado, ventanilla,
  *         llamado_en, servicio_nombre, servicio_prefijo
  */
-function turnos_en_ventanilla(): array
-{
-    // TEMPORAL: datos de ejemplo
-    $turnos = pantalla_demo_llamados(pantalla_demo_escenario());
-    usort($turnos, static fn(array $a, array $b): int => strcmp($b['llamado_en'], $a['llamado_en']));
-    return $turnos;
+function turnos_en_ventanilla(): array {
+    
+    $demo = pantalla_demo_escenario();   // TEMPORAL (demo)
+
+    if ($demo !== null) {
+        $turnos = pantalla_demo_llamados($demo);
+        usort($turnos, static fn(array $a, array $b): int => strcmp($b['llamado_en'], $a['llamado_en']));
+        return $turnos;
+    }
+
+    $stmt = db()->prepare(
+        "SELECT t.id, t.servicio_id, t.fecha, t.consecutivo, t.folio, t.estado,
+                t.operador_id, t.ventanilla, t.llamado_en,
+                s.nombre AS servicio_nombre, s.prefijo AS servicio_prefijo
+           FROM turnos t
+           JOIN servicios s ON s.id = t.servicio_id
+          WHERE t.fecha = :fecha AND t.estado = 'llamado'
+          ORDER BY t.llamado_en DESC, t.id DESC"
+    );
+
+    $stmt->execute([':fecha' => today()]);
+
+    return $stmt->fetchAll(PDO::FETCH_ASSOC);
 }
 
 /**
@@ -116,8 +135,31 @@ function turnos_en_ventanilla(): array
  *
  * llaves: id, prefijo, nombre, descripcion, activo, pendientes
  */
-function espera_por_servicio(): array
-{
-    // TEMPORAL: datos de ejemplo
-    return pantalla_demo_espera(pantalla_demo_escenario());
+function espera_por_servicio(): array {
+    $demo = pantalla_demo_escenario();   // TEMPORAL (demo)
+    if ($demo !== null) {
+        return pantalla_demo_espera($demo);
+    }
+
+    // El filtro de fecha y estado va en el JOIN (no en el WHERE) para que
+    // los servicios con 0 pendientes sigan apareciendo.
+    $stmt = db()->prepare(
+        "SELECT s.id, s.prefijo, s.nombre, s.descripcion, s.activo,
+                COUNT(t.id) AS pendientes
+           FROM servicios s
+           LEFT JOIN turnos t
+                  ON t.servicio_id = s.id
+                 AND t.fecha = :fecha
+                 AND t.estado = 'pendiente'
+          WHERE s.activo = 1
+          GROUP BY s.id
+          ORDER BY s.nombre"
+    );
+    $stmt->execute([':fecha' => today()]);
+    $filas = $stmt->fetchAll(PDO::FETCH_ASSOC);
+    foreach ($filas as &$fila) {
+        $fila['pendientes'] = (int) $fila['pendientes'];
+    }
+    unset($fila);
+    return $filas;
 }
