@@ -35,3 +35,10 @@ if ((int) $db->query('SELECT COUNT(*) FROM servicios')->fetchColumn() === 0) {
 } else {
     echo "Base existente: se conservaron los datos.\n";
 }
+
+if ((int) $db->query('SELECT COUNT(*) FROM operadores')->fetchColumn() === 0) {
+    create_operador('Administración Demo', 'admin', 'Admin2026!', 'admin', 1);
+    create_operador('Operador Demo 2', 'operador2', 'Operador2026!', 'operador', 2);
+    create_operador('Operador Demo 3', 'operador3', 'Operador2026!', 'operador', 3);
+    echo "Usuarios demo creados: admin, operador2 y operador3 (ver README).\n";
+}
