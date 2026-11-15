@@ -45,6 +45,18 @@ En ventanillas de atención o asesorías, los visitantes suelen amontonarse porq
 
 4. Abrir `http://127.0.0.1:8000` en el navegador.
 
+## Usuarios demo
+
+`php scripts/init-db.php` crea estos usuarios **ficticios** para probar el acceso de operadores en `http://127.0.0.1:8000/login.php`. Las contraseñas se guardan solo como hash (`password_hash`), nunca en texto plano.
+
+| Usuario | Contraseña | Rol | Ventanilla |
+|---|---|---|---|
+| `admin` | `Admin2026!` | admin | 1 |
+| `operador2` | `Operador2026!` | operador | 2 |
+| `operador3` | `Operador2026!` | operador | 3 |
+
+> ⚠️ Son solo para desarrollo local. Si el sistema se instalara en un servidor real, hay que cambiar estas contraseñas o crear usuarios nuevos.
+
 ## Estructura del proyecto
 
 ```text
