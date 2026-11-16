@@ -3,6 +3,17 @@ declare(strict_types=1);
 
 require dirname(__DIR__) . '/src/bootstrap.php';
 
+if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    ensure_post_csrf();
+    try {
+        $turno = emitir_turno(input_id($_POST, 'servicio_id'));
+        redirect('ticket.php?id=' . $turno['id']);
+    } catch (InvalidArgumentException $ex) {
+        set_flash($ex->getMessage(), 'error');
+        redirect('index.php');
+    }
+}
+
 $servicios = all_servicios(true);
 $pageTitle = 'Kiosco de turnos';
 require dirname(__DIR__) . '/src/views/header.php';
@@ -29,9 +40,13 @@ require dirname(__DIR__) . '/src/views/header.php';
             <h2 class="text-xl font-bold text-slate-800"><?= e($servicio['nombre']) ?></h2>
             <p class="text-slate-500 text-sm mt-2"><?= e($servicio['descripcion']) ?></p>
           </div>
-          <span class="text-xs font-medium text-slate-400">
-            Emisión de folios disponible en HU-03
-          </span>
+          <form method="post" action="index.php">
+            <?= csrf_field() ?>
+            <input type="hidden" name="servicio_id" value="<?= e($servicio['id']) ?>">
+            <button type="submit" class="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-semibold px-4 py-2.5 rounded-xl transition">
+              Tomar turno
+            </button>
+          </form>
         </article>
       <?php endforeach; ?>
     </section>
