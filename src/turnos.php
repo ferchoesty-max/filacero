@@ -61,3 +61,29 @@ function find_turno(int $id): ?array
     $stmt->execute([':id' => $id]);
     return $stmt->fetch() ?: null;
 }
+
+// Devuelve la lista de turnos en estado'pendiente' del dia de hoy
+function cola_pendiente(?int $servicioId = null): array
+{
+    $sql = "SELECT t.*,
+                   s.nombre  AS servicio_nombre,
+                   s.prefijo AS servicio_prefijo
+            FROM turnos t
+            INNER JOIN servicios s ON s.id = t.servicio_id
+            WHERE t.fecha = :fecha
+              AND t.estado = 'pendiente'";
+
+    $params = [':fecha' => today()];
+
+    if ($servicioId !== null) {
+        $sql .= " AND t.servicio_id = :servicio_id";
+        $params[':servicio_id'] = $servicioId;
+    }
+
+    $sql .= " ORDER BY t.id ASC";
+
+    $stmt = db()->prepare($sql);
+    $stmt->execute($params);
+
+    return $stmt->fetchAll(PDO::FETCH_ASSOC);
+}
