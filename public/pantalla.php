@@ -3,23 +3,18 @@ declare(strict_types=1);
 
 require dirname(__DIR__) . '/src/bootstrap.php';
 
-// Datos (funciones de src/pantalla.php, cargado desde bootstrap.php)
-$llamados = turnos_en_ventanilla();   // solo estado 'llamado', más reciente primero
-$espera   = espera_por_servicio();    // servicios activos con la llave 'pendientes'
+$llamados = turnos_en_ventanilla();   
+$espera   = espera_por_servicio();   
 
-$actual = $llamados[0] ?? null;               // turno actual (el más reciente)
-$otros  = array_slice($llamados, 1);          // resto de turnos llamados
+$actual = $llamados[0] ?? null;               // turno actual 
+$otros  = array_slice($llamados, 1);          
 $totalEspera = array_sum(array_map(static fn(array $s): int => (int) $s['pendientes'], $espera));
 
 $pageTitle = 'Pantalla de sala';
 
-// ---------------------------------------------------------------------
-// MODO PANTALLA COMPLETA (sin barra de navegación)
-// Para volver a mostrar el menú, comenta la línea activa de abajo
-// y descomenta la alternativa.
-// ---------------------------------------------------------------------
-//$hideNav = true;
-$hideNav = false;   // ← alternativa: mostrar menú de navegación
+
+//$hideNav = true; para pantalla completa
+$hideNav = false;   
 
 require dirname(__DIR__) . '/src/views/header.php';
 ?>

@@ -26,6 +26,12 @@ $flash = pull_flash();
             <a href="pantalla.php" class="hover:text-indigo-600 transition">Pantalla</a>
             <?php if (function_exists('operador_actual') && operador_actual() !== null): ?>
               <a href="panel.php" class="hover:text-indigo-600 transition">Panel</a>
+              <form method="post" action="logout.php">
+                <?= csrf_field() ?>
+                <button type="submit" class="bg-slate-100 hover:bg-slate-200 text-slate-700 font-medium px-4 py-2 rounded-xl transition">
+                  Salir (<?= e(operador_actual()['nombre']) ?>)
+                </button>
+              </form>
             <?php else: ?>
               <a href="login.php" class="bg-slate-100 hover:bg-slate-200 text-slate-700 font-medium px-4 py-2 rounded-xl transition">Operadores</a>
             <?php endif; ?>

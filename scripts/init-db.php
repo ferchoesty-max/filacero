@@ -35,3 +35,35 @@ if ((int) $db->query('SELECT COUNT(*) FROM servicios')->fetchColumn() === 0) {
 } else {
     echo "Base existente: se conservaron los datos.\n";
 }
+
+if ((int) $db->query('SELECT COUNT(*) FROM operadores')->fetchColumn() === 0) {
+    create_operador('Administración Demo', 'admin', 'Admin2026!', 'admin', 1);
+    create_operador('Operador Demo 2', 'operador2', 'Operador2026!', 'operador', 2);
+    create_operador('Operador Demo 3', 'operador3', 'Operador2026!', 'operador', 3);
+    echo "Usuarios demo creados: admin, operador2 y operador3 (ver README).\n";
+}
+
+if (in_array('--demo', $argv ?? [], true)) {
+    if ((int) $db->query('SELECT COUNT(*) FROM turnos')->fetchColumn() === 0) {
+        $servicios = all_servicios();
+
+        if (!empty($servicios)) {
+            $secuenciaDemo = [
+                $servicios[0]['id'],
+                $servicios[1]['id'] ?? $servicios[0]['id'],
+                $servicios[0]['id'],
+                $servicios[2]['id'] ?? $servicios[0]['id'],
+                $servicios[3]['id'] ?? $servicios[0]['id'],
+                $servicios[1]['id'] ?? $servicios[0]['id'],
+            ];
+
+            foreach ($secuenciaDemo as $servicioId) {
+                emitir_turno((int) $servicioId);
+            }
+
+            echo "6 turnos demo creados.\n";
+        }
+    } else {
+        echo "Ya existen turnos en la base: no se agregaron turnos demo.\n";
+    }
+}

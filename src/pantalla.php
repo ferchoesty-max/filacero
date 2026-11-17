@@ -2,14 +2,10 @@
 declare(strict_types=1);
 
 /**
- * módulo de la pantalla pública (HU-05)
+ * módulo de pantalla 
  *
  * SEMANA 1: las funciones devuelven datos de ejemplo con la misma forma
  * que devolverán las consultas reales. El escenario se elige con la URL:
- *
- *   pantalla.php                → mixto (por defecto)
- *   pantalla.php?demo=llamado   → un solo turno llamado
- *   pantalla.php?demo=vacio     → sin llamados
  *
  * SEMANA 2: reemplazar el cuerpo de las dos funciones públicas por SQL
  * y borrar el bloque marcado como TEMPORAL
@@ -19,7 +15,7 @@ declare(strict_types=1);
 
 const PANTALLA_DEMO_ESCENARIOS = ['mixto', 'llamado', 'vacio'];
 
-//lee ?demo= con lista blanca. En CLI o con valor desconocido usa 'mixto'
+
 function pantalla_demo_escenario(): ?string {
     $valor = $_GET['demo'] ?? null;
     if (is_string($valor) && in_array($valor, PANTALLA_DEMO_ESCENARIOS, true)) {
@@ -50,7 +46,6 @@ function pantalla_demo_turno(int $id, int $servicioId, string $prefijo,
     ];
 }
 
-/** Turnos llamados (sin ordenar) */
 function pantalla_demo_llamados(string $escenario): array {
     return match ($escenario) {
         'vacio'   => [],
@@ -65,7 +60,6 @@ function pantalla_demo_llamados(string $escenario): array {
     };
 }
 
-// pendientes [id, prefijo, nombre, descripcion, pendientes]
 function pantalla_demo_espera(string $escenario): array{
     $pendientes = match ($escenario) {
         'vacio'   => [2, 0, 1, 0],
@@ -95,18 +89,10 @@ function pantalla_demo_espera(string $escenario): array{
 }
 
 
-// FUNCIONES DEL CONTRATO (firmas y llaves para pasar al a SQL)
-
-/**
- * turnos en estado 'llamado' de hoy, ordenados por llamado_en DESC.
- * El primero es el turno actual
- *
- * llaves: id, servicio_id, fecha, consecutivo, folio, estado, ventanilla,
- *         llamado_en, servicio_nombre, servicio_prefijo
- */
+// FUNCIONES DEL CONTRATO
 function turnos_en_ventanilla(): array {
     
-    $demo = pantalla_demo_escenario();   // TEMPORAL (demo)
+    $demo = pantalla_demo_escenario();   // TEMPORAL 
 
     if ($demo !== null) {
         $turnos = pantalla_demo_llamados($demo);
@@ -129,20 +115,13 @@ function turnos_en_ventanilla(): array {
     return $stmt->fetchAll(PDO::FETCH_ASSOC);
 }
 
-/**
- * servicios activos con la llave extra 'pendientes' (int, 0 si no hay)
- * cuenta solo turnos 'pendiente' de hoy
- *
- * llaves: id, prefijo, nombre, descripcion, activo, pendientes
- */
+
 function espera_por_servicio(): array {
-    $demo = pantalla_demo_escenario();   // TEMPORAL (demo)
+    $demo = pantalla_demo_escenario();   // TEMPORAL 
     if ($demo !== null) {
         return pantalla_demo_espera($demo);
     }
 
-    // El filtro de fecha y estado va en el JOIN (no en el WHERE) para que
-    // los servicios con 0 pendientes sigan apareciendo.
     $stmt = db()->prepare(
         "SELECT s.id, s.prefijo, s.nombre, s.descripcion, s.activo,
                 COUNT(t.id) AS pendientes
