@@ -33,9 +33,9 @@ En ventanillas de atención o asesorías, los visitantes suelen amontonarse porq
    ```
    *(En Windows, si falta `pdo_sqlite`, abre el `php.ini` que indica `php --ini` y quita el `;` a `extension=pdo_sqlite` y `extension=sqlite3`. Si Windows bloquea `php.exe`, usa WSL anteponiendo `wsl` a cada comando.)*
 
-2. Crear la base de datos local con los servicios iniciales:
+2. Crear la base de datos local con los servicios iniciales y usuarios demo (agrega `--demo` para sembrar también 6 turnos de ejemplo):
    ```bash
-   php scripts/init-db.php
+   php scripts/init-db.php --demo
    ```
 
 3. Iniciar el servidor local de desarrollo:
@@ -65,13 +65,16 @@ filacero/
 ├── scripts/init-db.php          # Inicialización de base y datos semilla
 ├── storage/                     # Base local filacero.sqlite (ignorada por Git)
 ├── src/
+│   ├── auth.php                 # Registro, hash de contraseñas y sesión de operador
 │   ├── bootstrap.php            # Sesión, zona horaria y carga de módulos
 │   ├── db.php                   # Conexión PDO SQLite
 │   ├── functions.php            # Helpers de seguridad, CSRF, flash y fechas
+│   ├── pantalla.php             # Consultas de turnos en ventanilla y espera por servicio
 │   ├── servicios.php            # Consultas del catálogo de servicios
-│   └── views/                   # Encabezado y pie compartidos
+│   ├── turnos.php               # Emisión de folios y cola de turnos pendientes
+│   └── views/                   # Encabezado, pie y badges compartidos
 ├── public/                      # Páginas accesibles desde el navegador
-└── docs/                        # Historias de usuario, modelo de datos y documentación
+└── docs/                        # Historias, modelo de datos, bocetos y entregas
 ```
 
 ## Integrantes
