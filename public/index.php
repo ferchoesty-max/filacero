@@ -15,14 +15,23 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 }
 
 $servicios = all_servicios(true);
+$totalEspera = array_sum(array_map(
+    static fn(array $s): int => (int) $s['pendientes'],
+    espera_por_servicio()
+));
 $pageTitle = 'Kiosco de turnos';
 require dirname(__DIR__) . '/src/views/header.php';
 ?>
 <main class="max-w-6xl mx-auto w-full px-4 py-8">
-  <section class="mb-8">
-    <p class="text-indigo-600 font-bold text-xs uppercase tracking-widest">Kiosco de atención</p>
-    <h1 class="text-3xl md:text-4xl font-extrabold mt-1">Selecciona un servicio</h1>
-    <p class="text-slate-500 mt-2">Elige el trámite que necesitas realizar para recibir tu folio.</p>
+  <section class="mb-8 flex flex-wrap items-start justify-between gap-4">
+    <div>
+      <p class="text-indigo-600 font-bold text-xs uppercase tracking-widest">Kiosco de atención</p>
+      <h1 class="text-3xl md:text-4xl font-extrabold mt-1">Selecciona un servicio</h1>
+      <p class="text-slate-500 mt-2">Elige el trámite que necesitas realizar para recibir tu folio.</p>
+    </div>
+    <p class="text-xs font-medium text-slate-400 bg-white border border-slate-200 rounded-xl px-3 py-1.5">
+      <?= e($totalEspera) ?> <?= $totalEspera === 1 ? 'persona en espera' : 'personas en espera' ?>
+    </p>
   </section>
 
   <?php if ($servicios === []): ?>
