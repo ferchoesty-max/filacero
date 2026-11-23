@@ -35,6 +35,42 @@ function create_servicio(array $data): int
     return (int) db()->lastInsertId();
 }
 
+const SERVICIOS_POR_PAGINA = 4;
+
+function filtro_busqueda_servicios(string $busqueda): array
+{
+    $busqueda = trim($busqueda);
+    if ($busqueda === '') {
+        return ['', []];
+    }
+    $patron = '%' . addcslashes($busqueda, '%_\\') . '%';
+    return [
+        " WHERE prefijo LIKE :busqueda ESCAPE '\\' OR nombre LIKE :busqueda ESCAPE '\\'",
+        [':busqueda' => $patron],
+    ];
+}
+
+function contar_servicios(string $busqueda = ''): int
+{
+    [$where, $params] = filtro_busqueda_servicios($busqueda);
+    $stmt = db()->prepare('SELECT COUNT(*) FROM servicios' . $where);
+    $stmt->execute($params);
+    return (int) $stmt->fetchColumn();
+}
+
+function buscar_servicios(string $busqueda = '', int $pagina = 1, int $porPagina = SERVICIOS_POR_PAGINA): array
+{
+    [$where, $params] = filtro_busqueda_servicios($busqueda);
+    $stmt = db()->prepare('SELECT * FROM servicios' . $where . ' ORDER BY id ASC LIMIT :limite OFFSET :offset');
+    foreach ($params as $clave => $valor) {
+        $stmt->bindValue($clave, $valor);
+    }
+    $stmt->bindValue(':limite', $porPagina, PDO::PARAM_INT);
+    $stmt->bindValue(':offset', (max(1, $pagina) - 1) * $porPagina, PDO::PARAM_INT);
+    $stmt->execute();
+    return $stmt->fetchAll();
+}
+
 function prefijo_en_uso(string $prefijo, ?int $excluirId = null): bool
 {
     $stmt = db()->prepare('SELECT COUNT(*) FROM servicios WHERE prefijo = :prefijo AND id != :id');

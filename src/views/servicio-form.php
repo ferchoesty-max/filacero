@@ -7,7 +7,10 @@ $inputBase = 'w-full rounded-xl border bg-white px-4 py-3 outline-none focus:rin
 $inputNormal = $inputBase . ' border-slate-300 focus:border-indigo-600 focus:ring-indigo-200';
 $inputError = $inputBase . ' border-rose-400 focus:border-rose-600 focus:ring-rose-200';
 ?>
-<form method="post" action="<?= e($formAction) ?>" class="bg-white rounded-2xl shadow-sm border border-slate-200 p-6 space-y-5" novalidate>
+<form method="post" action="<?= e($formAction) ?>" class="h-full bg-white rounded-2xl shadow-sm border border-slate-200 p-6 space-y-5" novalidate>
+  <?php if (!empty($formTitulo)): ?>
+    <h2 class="text-lg font-semibold text-slate-800"><?= e($formTitulo) ?></h2>
+  <?php endif; ?>
   <?= csrf_field() ?>
   <?php if (!empty($servicioId)): ?>
     <input type="hidden" name="id" value="<?= e($servicioId) ?>">
@@ -42,7 +45,7 @@ $inputError = $inputBase . ' border-rose-400 focus:border-rose-600 focus:ring-ro
   <div>
     <label class="block font-bold text-sm mb-2" for="descripcion">Descripción <span class="font-medium text-slate-500">(opcional)</span></label>
     <textarea id="descripcion" name="descripcion" maxlength="160" rows="3"
-              class="<?= isset($errores['descripcion']) ? $inputError : $inputNormal ?>"
+              class="<?= isset($errores['descripcion']) ? $inputError : $inputNormal ?> resize-none"
               <?= isset($errores['descripcion']) ? 'aria-invalid="true" aria-describedby="error-descripcion"' : '' ?>><?= e($valores['descripcion'] ?? '') ?></textarea>
     <?php if (isset($errores['descripcion'])): ?>
       <p id="error-descripcion" class="text-sm text-rose-700 font-semibold mt-2"><?= e($errores['descripcion']) ?></p>
