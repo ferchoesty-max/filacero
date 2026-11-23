@@ -1,46 +1,61 @@
 <?php
 declare(strict_types=1);
 
-function emitir_turno(int $servicioId): array
+function emitir_turno(int $servicioId, ?string $momento = null): array
 {
-    $servicio = find_servicio($servicioId);
-    if ($servicio === null) {
-        throw new ReglaNegocioException('El servicio no existe.');
+    $ts = strtotime($momento ?? now());
+    if ($ts === false) {
+        throw new InvalidArgumentException('El momento indicado no es una fecha válida.');
     }
-    if ((int) $servicio['activo'] !== 1) {
-        throw new ReglaNegocioException('Ese servicio no está disponible en este momento.');
-    }
+    $creadoEn = date('Y-m-d H:i:s', $ts);
+    $fecha = date('Y-m-d', $ts);
 
-    $fecha = today();
+    return with_write_lock(function (PDO $pdo) use ($servicioId, $fecha, $creadoEn): array {
+        $servicio = find_servicio($servicioId);
+        if ($servicio === null) {
+            throw new ReglaNegocioException('El servicio no existe.');
+        }
+        if ((int) $servicio['activo'] !== 1) {
+            throw new ReglaNegocioException('Ese servicio no está disponible en este momento.');
+        }
 
-    $stmt = db()->prepare(
-        'SELECT COALESCE(MAX(consecutivo), 0) + 1
-           FROM turnos
-          WHERE servicio_id = :servicio_id AND fecha = :fecha'
-    );
-    $stmt->execute([':servicio_id' => $servicioId, ':fecha' => $fecha]);
-    $consecutivo = (int) $stmt->fetchColumn();
+        $stmt = $pdo->prepare(
+            'SELECT COALESCE(MAX(consecutivo), 0) + 1
+               FROM turnos
+              WHERE servicio_id = :servicio_id AND fecha = :fecha'
+        );
+        $stmt->execute([':servicio_id' => $servicioId, ':fecha' => $fecha]);
+        $consecutivo = (int) $stmt->fetchColumn();
 
-    $folio = sprintf('%s-%03d', $servicio['prefijo'], $consecutivo);
+        $folio = sprintf('%s-%03d', $servicio['prefijo'], $consecutivo);
 
-    $stmt = db()->prepare(
-        'INSERT INTO turnos(servicio_id, fecha, consecutivo, folio, estado, creado_en)
-         VALUES(:servicio_id, :fecha, :consecutivo, :folio, :estado, :creado_en)'
-    );
-    $stmt->execute([
-        ':servicio_id' => $servicioId,
-        ':fecha'       => $fecha,
-        ':consecutivo' => $consecutivo,
-        ':folio'       => $folio,
-        ':estado'      => 'pendiente',
-        ':creado_en'   => now(),
-    ]);
+        $stmt = $pdo->prepare('SELECT COUNT(*) FROM turnos WHERE fecha = :fecha AND folio = :folio');
+        $stmt->execute([':fecha' => $fecha, ':folio' => $folio]);
+        if ((int) $stmt->fetchColumn() > 0) {
+            throw new ReglaNegocioException(
+                'No se pudo generar el folio ' . $folio . ' porque ya se usó hoy. Avisa al personal.'
+            );
+        }
 
-    $turno = find_turno((int) db()->lastInsertId());
-    if ($turno === null) {
-        throw new RuntimeException('No se pudo recuperar el turno emitido.');
-    }
-    return $turno;
+        $stmt = $pdo->prepare(
+            'INSERT INTO turnos(servicio_id, fecha, consecutivo, folio, estado, creado_en)
+             VALUES(:servicio_id, :fecha, :consecutivo, :folio, :estado, :creado_en)'
+        );
+        $stmt->execute([
+            ':servicio_id' => $servicioId,
+            ':fecha'       => $fecha,
+            ':consecutivo' => $consecutivo,
+            ':folio'       => $folio,
+            ':estado'      => 'pendiente',
+            ':creado_en'   => $creadoEn,
+        ]);
+
+        $turno = find_turno((int) $pdo->lastInsertId());
+        if ($turno === null) {
+            throw new RuntimeException('No se pudo recuperar el turno emitido.');
+        }
+        return $turno;
+    });
 }
 
 function find_turno(int $id): ?array
