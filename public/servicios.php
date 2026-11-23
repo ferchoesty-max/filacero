@@ -74,9 +74,17 @@ require __DIR__ . '/../src/views/header.php';
           <input id="q" name="q" type="search" maxlength="60" value="<?= e($busqueda) ?>"
                  placeholder="Buscar por prefijo o nombre"
                  class="flex-1 min-w-0 rounded-xl border border-slate-300 bg-white px-4 py-2 outline-none focus:border-indigo-600 focus:ring-2 focus:ring-indigo-200">
-          <button type="submit" class="bg-indigo-600 hover:bg-indigo-700 text-white font-semibold px-4 py-2 rounded-xl transition cursor-pointer">Buscar</button>
+          <button
+            type="submit"
+            class="bg-indigo-600 hover:bg-indigo-700 text-white font-semibold px-4 py-2 rounded-xl transition cursor-pointer">
+            Buscar
+          </button>
           <?php if ($busqueda !== ''): ?>
-            <a href="servicios.php" class="bg-slate-100 hover:bg-slate-200 text-slate-700 font-medium px-4 py-2 rounded-xl transition">Limpiar</a>
+            <a
+              href="servicios.php"
+              class="bg-slate-100 hover:bg-slate-200 text-slate-700 font-medium px-4 py-2 rounded-xl transition">
+              Limpiar
+            </a>
           <?php endif; ?>
         </form>
 
@@ -119,8 +127,11 @@ require __DIR__ . '/../src/views/header.php';
                     </td>
                     <td class="py-3 pl-10 pr-2">
                       <div class="flex justify-start gap-2">
-                        <a href="servicio-editar.php?id=<?= e($servicio['id']) ?>" title="Editar" aria-label="Editar <?= e($servicio['nombre']) ?>"
-                           class="inline-flex items-center justify-center w-9 h-9 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 transition">
+                        <a
+                          href="servicio-editar.php?id=<?= e($servicio['id']) ?>"
+                          title="Editar"
+                          aria-label="Editar <?= e($servicio['nombre']) ?>"
+                          class="inline-flex items-center justify-center w-9 h-9 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 transition">
                           <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.8" stroke="currentColor" class="w-5 h-5" aria-hidden="true">
                             <path stroke-linecap="round" stroke-linejoin="round" d="m16.862 4.487 1.687-1.688a1.875 1.875 0 1 1 2.652 2.652L10.582 16.07a4.5 4.5 0 0 1-1.897 1.13L6 18l.8-2.685a4.5 4.5 0 0 1 1.13-1.897l8.932-8.931Zm0 0L19.5 7.125M18 14v4.75A2.25 2.25 0 0 1 15.75 21H5.25A2.25 2.25 0 0 1 3 18.75V8.25A2.25 2.25 0 0 1 5.25 6H10" />
                           </svg>
@@ -129,16 +140,26 @@ require __DIR__ . '/../src/views/header.php';
                           <?= csrf_field() ?>
                           <input type="hidden" name="id" value="<?= e($servicio['id']) ?>">
                           <input type="hidden" name="activo" value="<?= $activo ? '0' : '1' ?>">
+                          <input type="hidden" name="pagina" value="<?= e($pagina) ?>">
+                          <?php if ($busqueda !== ''): ?>
+                            <input type="hidden" name="q" value="<?= e($busqueda) ?>">
+                          <?php endif; ?>
                           <?php if ($activo): ?>
-                            <button type="submit" title="Desactivar" aria-label="Desactivar <?= e($servicio['nombre']) ?>"
-                                    class="inline-flex items-center justify-center w-9 h-9 rounded-xl bg-rose-100 hover:bg-rose-200 text-rose-700 transition cursor-pointer">
+                            <button
+                              type="submit"
+                              title="Desactivar"
+                              aria-label="Desactivar <?= e($servicio['nombre']) ?>"
+                              class="inline-flex items-center justify-center w-9 h-9 rounded-xl bg-rose-100 hover:bg-rose-200 text-rose-700 transition cursor-pointer">
                               <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" class="w-5 h-5" aria-hidden="true">
                                 <path stroke-linecap="round" stroke-linejoin="round" d="M6 18 18 6M6 6l12 12" />
                               </svg>
                             </button>
                           <?php else: ?>
-                            <button type="submit" title="Activar" aria-label="Activar <?= e($servicio['nombre']) ?>"
-                                    class="inline-flex items-center justify-center w-9 h-9 rounded-xl bg-emerald-100 hover:bg-emerald-200 text-emerald-700 transition cursor-pointer">
+                            <button
+                              type="submit"
+                              title="Activar"
+                              aria-label="Activar <?= e($servicio['nombre']) ?>"
+                              class="inline-flex items-center justify-center w-9 h-9 rounded-xl bg-emerald-100 hover:bg-emerald-200 text-emerald-700 transition cursor-pointer">
                               <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" class="w-5 h-5" aria-hidden="true">
                                 <path stroke-linecap="round" stroke-linejoin="round" d="m4.5 12.75 6 6 9-13.5" />
                               </svg>
@@ -158,17 +179,29 @@ require __DIR__ . '/../src/views/header.php';
             <?php if ($totalPaginas > 1): ?>
               <nav class="flex items-center gap-2" aria-label="Páginas de servicios">
                 <?php if ($pagina > 1): ?>
-                  <a href="<?= e($urlPagina($pagina - 1)) ?>" class="bg-slate-100 hover:bg-slate-200 text-slate-700 font-medium text-sm px-3 py-1.5 rounded-xl transition">Anterior</a>
+                  <a
+                    href="<?= e($urlPagina($pagina - 1)) ?>"
+                    class="bg-slate-100 hover:bg-slate-200 text-slate-700 font-medium text-sm px-3 py-1.5 rounded-xl transition">
+                    Anterior
+                  </a>
                 <?php endif; ?>
                 <?php for ($numero = 1; $numero <= $totalPaginas; $numero++): ?>
                   <?php if ($numero === $pagina): ?>
                     <span aria-current="page" class="bg-indigo-600 text-white font-semibold text-sm px-3 py-1.5 rounded-xl"><?= e($numero) ?></span>
                   <?php else: ?>
-                    <a href="<?= e($urlPagina($numero)) ?>" class="bg-slate-100 hover:bg-slate-200 text-slate-700 font-medium text-sm px-3 py-1.5 rounded-xl transition"><?= e($numero) ?></a>
+                    <a
+                      href="<?= e($urlPagina($numero)) ?>"
+                      class="bg-slate-100 hover:bg-slate-200 text-slate-700 font-medium text-sm px-3 py-1.5 rounded-xl transition">
+                      <?= e($numero) ?>
+                    </a>
                   <?php endif; ?>
                 <?php endfor; ?>
                 <?php if ($pagina < $totalPaginas): ?>
-                  <a href="<?= e($urlPagina($pagina + 1)) ?>" class="bg-slate-100 hover:bg-slate-200 text-slate-700 font-medium text-sm px-3 py-1.5 rounded-xl transition">Siguiente</a>
+                  <a
+                    href="<?= e($urlPagina($pagina + 1)) ?>"
+                    class="bg-slate-100 hover:bg-slate-200 text-slate-700 font-medium text-sm px-3 py-1.5 rounded-xl transition">
+                    Siguiente
+                  </a>
                 <?php endif; ?>
               </nav>
             <?php endif; ?>

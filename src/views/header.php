@@ -57,10 +57,13 @@ $flash = pull_flash();
     <?php endif; ?>
     <?php if ($flash !== null): ?>
       <?php
-        $isError = ($flash['type'] ?? 'success') === 'error';
-        $flashStyles = $isError
-            ? 'bg-rose-50 border-rose-200 text-rose-800'
-            : 'bg-emerald-50 border-emerald-200 text-emerald-800';
+        $flashType = $flash['type'] ?? 'success';
+        $isError = $flashType === 'error';
+        $flashStyles = match ($flashType) {
+            'error' => 'bg-rose-50 border-rose-200 text-rose-800',
+            'warning' => 'bg-amber-50 border-amber-200 text-amber-800',
+            default => 'bg-emerald-50 border-emerald-200 text-emerald-800',
+        };
       ?>
       <div class="<?= $isError ? '' : 'aviso-temporal ' ?>max-w-6xl mx-auto w-full px-4 pt-6" role="status">
         <div class="rounded-xl border p-4 font-semibold <?= $flashStyles ?>">

@@ -23,7 +23,9 @@ if ($servicio === null) {
         <p class="text-6xl font-extrabold text-slate-300">404</p>
         <h1 class="text-xl font-bold mt-2">El servicio no existe</h1>
         <p class="text-slate-500 mt-2">Puede que lo hayan quitado o que el enlace esté mal escrito.</p>
-        <a href="servicios.php" class="inline-block mt-6 bg-indigo-600 hover:bg-indigo-700 text-white font-semibold px-4 py-2.5 rounded-xl transition">
+        <a
+          href="servicios.php"
+          class="inline-block mt-6 bg-indigo-600 hover:bg-indigo-700 text-white font-semibold px-4 py-2.5 rounded-xl transition">
           Volver al catálogo
         </a>
       </div>
@@ -63,7 +65,9 @@ require __DIR__ . '/../src/views/header.php';
 
 <main class="max-w-6xl mx-auto w-full px-4 py-8 flex-1">
   <div class="max-w-xl mx-auto">
-    <a href="servicios.php" class="inline-flex items-center gap-2 mb-6 bg-slate-100 hover:bg-slate-200 text-slate-700 font-medium px-4 py-2 rounded-xl transition">
+    <a
+      href="servicios.php"
+      class="inline-flex items-center gap-2 mb-6 bg-slate-100 hover:bg-slate-200 text-slate-700 font-medium px-4 py-2 rounded-xl transition">
       <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" class="w-4 h-4" aria-hidden="true">
         <path stroke-linecap="round" stroke-linejoin="round" d="M10.5 19.5 3 12m0 0 7.5-7.5M3 12h18" />
       </svg>

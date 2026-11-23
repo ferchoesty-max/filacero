@@ -94,7 +94,9 @@ function require_admin(): array
         <p class="text-6xl font-extrabold text-slate-300">403</p>
         <h1 class="text-xl font-bold mt-2">No tienes permiso para entrar aquí</h1>
         <p class="text-slate-500 mt-2">Sección solo disponible para administradores.</p>
-        <a href="panel.php" class="inline-block mt-6 bg-indigo-600 hover:bg-indigo-700 text-white font-semibold px-4 py-2.5 rounded-xl transition">
+        <a
+          href="panel.php"
+          class="inline-block mt-6 bg-indigo-600 hover:bg-indigo-700 text-white font-semibold px-4 py-2.5 rounded-xl transition">
           Volver al panel
         </a>
       </div>

@@ -53,11 +53,17 @@ $inputError = $inputBase . ' border-rose-400 focus:border-rose-600 focus:ring-ro
   </div>
 
   <div class="flex flex-wrap gap-3">
-    <button type="submit" class="bg-indigo-600 hover:bg-indigo-700 text-white font-semibold px-4 py-2.5 rounded-xl transition">
+    <button
+      type="submit"
+      class="bg-indigo-600 hover:bg-indigo-700 text-white font-semibold px-4 py-2.5 rounded-xl transition cursor-pointer">
       <?= e($botonTexto) ?>
     </button>
     <?php if (!empty($cancelarUrl)): ?>
-      <a href="<?= e($cancelarUrl) ?>" class="bg-rose-600 hover:bg-rose-700 text-white font-medium px-4 py-2.5 rounded-xl transition">Cancelar</a>
+      <a
+        href="<?= e($cancelarUrl) ?>"
+        class="bg-rose-600 hover:bg-rose-700 text-white font-medium px-4 py-2.5 rounded-xl transition">
+        Cancelar
+      </a>
     <?php endif; ?>
   </div>
 </form>
