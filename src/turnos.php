@@ -1,17 +1,14 @@
 <?php
 declare(strict_types=1);
 
-/**
- * Emite un turno nuevo para el servicio indicado.
- *
- * Serie = servicio + dia: cada servicio lleva su propio consecutivo
- * y cada dia vuelve a empezar en 001. Folio = PREFIJO-NNN (ASE-001).
- */
 function emitir_turno(int $servicioId): array
 {
     $servicio = find_servicio($servicioId);
     if ($servicio === null) {
-        throw new InvalidArgumentException('El servicio no existe.');
+        throw new ReglaNegocioException('El servicio no existe.');
+    }
+    if ((int) $servicio['activo'] !== 1) {
+        throw new ReglaNegocioException('Ese servicio no está disponible en este momento.');
     }
 
     $fecha = today();
@@ -46,10 +43,6 @@ function emitir_turno(int $servicioId): array
     return $turno;
 }
 
-/**
- * Busca un turno por id. Incluye el nombre y prefijo de su servicio.
- * Devuelve null si no existe.
- */
 function find_turno(int $id): ?array
 {
     $stmt = db()->prepare(
@@ -62,7 +55,6 @@ function find_turno(int $id): ?array
     return $stmt->fetch() ?: null;
 }
 
-// Devuelve la lista de turnos en estado'pendiente' del dia de hoy
 function cola_pendiente(?int $servicioId = null): array
 {
     $sql = "SELECT t.*,

@@ -8,7 +8,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     try {
         $turno = emitir_turno(input_id($_POST, 'servicio_id'));
         redirect('ticket.php?id=' . $turno['id']);
-    } catch (InvalidArgumentException $ex) {
+    } catch (ReglaNegocioException $ex) {
         set_flash($ex->getMessage(), 'error');
         redirect('index.php');
     }
