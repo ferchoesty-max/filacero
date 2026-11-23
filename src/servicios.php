@@ -34,3 +34,61 @@ function create_servicio(array $data): int
     ]);
     return (int) db()->lastInsertId();
 }
+
+function prefijo_en_uso(string $prefijo, ?int $excluirId = null): bool
+{
+    $stmt = db()->prepare('SELECT COUNT(*) FROM servicios WHERE prefijo = :prefijo AND id != :id');
+    $stmt->execute([':prefijo' => $prefijo, ':id' => $excluirId ?? 0]);
+    return (int) $stmt->fetchColumn() > 0;
+}
+
+function validate_servicio(array $data, ?int $excluirId = null): array
+{
+    $errores = [];
+    $prefijo = strtoupper(trim((string) ($data['prefijo'] ?? '')));
+    $nombre = trim((string) ($data['nombre'] ?? ''));
+    $descripcion = trim((string) ($data['descripcion'] ?? ''));
+
+    if (!preg_match('/^[A-Z]{2,4}$/', $prefijo)) {
+        $errores['prefijo'] = 'El prefijo debe tener de 2 a 4 letras, sin números ni espacios.';
+    } elseif (prefijo_en_uso($prefijo, $excluirId)) {
+        $errores['prefijo'] = 'Ese prefijo ya lo usa otro servicio.';
+    }
+
+    if (!preg_match('/^.{3,60}$/us', $nombre)) {
+        $errores['nombre'] = 'El nombre debe tener entre 3 y 60 caracteres.';
+    }
+
+    if (!preg_match('/^.{0,160}$/us', $descripcion)) {
+        $errores['descripcion'] = 'La descripción puede tener máximo 160 caracteres.';
+    }
+
+    return $errores;
+}
+
+function update_servicio(int $id, array $data): bool
+{
+    $sql = 'UPDATE servicios
+            SET prefijo = :prefijo, nombre = :nombre, descripcion = :descripcion, updated_at = :updated_at
+            WHERE id = :id';
+    $stmt = db()->prepare($sql);
+    $stmt->execute([
+        ':prefijo'     => strtoupper(trim((string) $data['prefijo'])),
+        ':nombre'      => trim((string) $data['nombre']),
+        ':descripcion' => trim((string) ($data['descripcion'] ?? '')),
+        ':updated_at'  => now(),
+        ':id'          => $id,
+    ]);
+    return $stmt->rowCount() === 1;
+}
+
+function set_servicio_activo(int $id, bool $activo): bool
+{
+    $stmt = db()->prepare('UPDATE servicios SET activo = :activo, updated_at = :updated_at WHERE id = :id');
+    $stmt->execute([
+        ':activo'     => $activo ? 1 : 0,
+        ':updated_at' => now(),
+        ':id'         => $id,
+    ]);
+    return $stmt->rowCount() === 1;
+}
