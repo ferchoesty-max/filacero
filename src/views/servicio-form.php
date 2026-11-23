@@ -57,7 +57,7 @@ $inputError = $inputBase . ' border-rose-400 focus:border-rose-600 focus:ring-ro
       <?= e($botonTexto) ?>
     </button>
     <?php if (!empty($cancelarUrl)): ?>
-      <a href="<?= e($cancelarUrl) ?>" class="bg-slate-100 hover:bg-slate-200 text-slate-700 font-medium px-4 py-2.5 rounded-xl transition">Cancelar</a>
+      <a href="<?= e($cancelarUrl) ?>" class="bg-rose-600 hover:bg-rose-700 text-white font-medium px-4 py-2.5 rounded-xl transition">Cancelar</a>
     <?php endif; ?>
   </div>
 </form>

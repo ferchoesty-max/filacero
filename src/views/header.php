@@ -13,6 +13,22 @@ $flash = pull_flash();
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
+    <style>
+      @keyframes aviso-desvanecer {
+        to { opacity: 0; }
+      }
+      @keyframes aviso-cerrar {
+        to { max-height: 0; margin-top: 0; margin-bottom: 0; padding-top: 0; padding-bottom: 0; border-width: 0; }
+      }
+      .aviso-temporal {
+        max-height: 12rem;
+        overflow: hidden;
+        animation: aviso-desvanecer 3s ease-in 3s forwards, aviso-cerrar 0.4s ease-out 6s forwards;
+      }
+      @media (prefers-reduced-motion: reduce) {
+        .aviso-temporal { animation: none; }
+      }
+    </style>
   </head>
   <body class="<?= e($bodyClasses) ?>">
     <?php if (empty($hideNav)): ?>
@@ -46,7 +62,7 @@ $flash = pull_flash();
             ? 'bg-rose-50 border-rose-200 text-rose-800'
             : 'bg-emerald-50 border-emerald-200 text-emerald-800';
       ?>
-      <div class="max-w-6xl mx-auto w-full px-4 pt-6" role="status">
+      <div class="<?= $isError ? '' : 'aviso-temporal ' ?>max-w-6xl mx-auto w-full px-4 pt-6" role="status">
         <div class="rounded-xl border p-4 font-semibold <?= $flashStyles ?>">
           <?= e($flash['message']) ?>
         </div>
