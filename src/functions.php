@@ -90,3 +90,7 @@ function input_id(array $source, string $key = 'id'): int
     $id = filter_var($source[$key] ?? null, FILTER_VALIDATE_INT, ['options' => ['min_range' => 1]]);
     return $id === false ? 0 : $id;
 }
+
+final class ReglaNegocioException extends RuntimeException
+{
+}

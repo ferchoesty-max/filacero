@@ -38,22 +38,33 @@ SELECT COALESCE(MAX(consecutivo), 0) + 1
  WHERE servicio_id = :servicio_id AND fecha = :fecha
 ```
 
-La fecha se genera en PHP con `today()` usando la zona horaria `America/Mexico_City`.
+La fecha y la hora se generan en PHP con la zona horaria `America/Mexico_City`.
 El turno se guarda en estado `pendiente` junto con `fecha`, `consecutivo`, `folio` y `creado_en`.
+
+`emitir_turno($servicioId, $momento)` acepta un `$momento` opcional (`'Y-m-d H:i:s'`).
+Si no se manda, se usa la hora actual. Sirve para probar el reinicio de la serie al día siguiente.
 
 ### 1.4 Defensas contra folios duplicados
 
 | Defensa | Dónde | Estado |
 |---|---|---|
 | `UNIQUE(servicio_id, fecha, consecutivo)` y `UNIQUE(fecha, folio)`: la base rechaza cualquier duplicado | `database/schema.sql` | Implementada (HU-01) |
-| Lectura del `MAX` e `INSERT` dentro de una transacción `BEGIN IMMEDIATE`, para que dos personas que piden turno al mismo tiempo no lean el mismo número | `src/db.php` · `src/turnos.php` | Pendiente (HU-07) |
+| Lectura del `MAX` e `INSERT` dentro de una transacción `BEGIN IMMEDIATE` con `with_write_lock()`, para que dos personas que piden turno al mismo tiempo no lean el mismo número | `src/db.php` · `src/turnos.php` | Implementada (HU-07) |
+| Si el folio calculado ya existe ese día (por ejemplo, porque un servicio tomó el prefijo que antes tenía otro), se muestra "No se pudo generar el folio … porque ya se usó hoy" y no se guarda nada | `src/turnos.php` | Implementada (HU-07) |
+
+Con `BEGIN IMMEDIATE`, la segunda petición espera (hasta 3 s, `busy_timeout`) a que la primera haga `COMMIT`.
+Si algo falla dentro del bloque, se hace `ROLLBACK` y no queda ningún turno a medias.
+
+**Evidencia:** 5 procesos emitiendo 20 turnos cada uno al mismo tiempo del mismo servicio generaron 100 folios distintos, consecutivos del 1 al 100, sin errores.
 
 ### 1.5 Servicios que no emiten turnos
 
+Los errores que ve el visitante se lanzan con `ReglaNegocioException` y el kiosco los muestra en rojo.
+
 | Caso | Resultado | Estado |
 |---|---|---|
-| Servicio inexistente | Mensaje "El servicio no existe." en el kiosco | Implementada (HU-03) |
-| Servicio inactivo | Mensaje "Ese servicio no está disponible en este momento" | Pendiente (HU-07) |
+| Servicio inexistente | Mensaje "El servicio no existe." en el kiosco | Implementada (HU-03 · HU-07) |
+| Servicio inactivo (por ejemplo, desactivado con el kiosco ya abierto) | Mensaje "Ese servicio no está disponible en este momento." y no se guarda el turno | Implementada (HU-07) |
 
 ## 2. Diagrama de estados de un turno
 

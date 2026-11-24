@@ -22,3 +22,17 @@ function db(): PDO
 
     return $connection;
 }
+
+function with_write_lock(callable $bloque): mixed
+{
+    $pdo = db();
+    $pdo->exec('BEGIN IMMEDIATE');
+    try {
+        $resultado = $bloque($pdo);
+        $pdo->exec('COMMIT');
+        return $resultado;
+    } catch (Throwable $ex) {
+        $pdo->exec('ROLLBACK');
+        throw $ex;
+    }
+}
