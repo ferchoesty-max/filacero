@@ -19,3 +19,4 @@ require_once __DIR__ . '/servicios.php';
 
 require_once __DIR__ . '/pantalla.php';
 require_once __DIR__ . '/turnos.php';
+require_once __DIR__ . '/atencion.php';

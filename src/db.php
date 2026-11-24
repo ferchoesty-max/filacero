@@ -27,3 +27,17 @@ function db_close(): void
 {
     $GLOBALS['__filacero_db'] = null;
 }
+
+function with_write_lock(callable $bloque): mixed
+{
+    $pdo = db();
+    $pdo->exec('BEGIN IMMEDIATE');
+    try {
+        $resultado = $bloque($pdo);
+        $pdo->exec('COMMIT');
+        return $resultado;
+    } catch (Throwable $ex) {
+        $pdo->exec('ROLLBACK');
+        throw $ex;
+    }
+}

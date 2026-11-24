@@ -71,3 +71,37 @@ function require_login(): array
     }
     return $operador;
 }
+
+function es_admin(): bool
+{
+    $operador = operador_actual();
+    return $operador !== null && $operador['rol'] === 'admin';
+}
+
+function require_admin(): array
+{
+    $operador = require_login();
+    if (es_admin()) {
+        return $operador;
+    }
+
+    http_response_code(403);
+    $pageTitle = 'Acceso denegado';
+    require __DIR__ . '/views/header.php';
+    ?>
+    <main class="max-w-6xl mx-auto w-full px-4 py-8">
+      <div class="max-w-md mx-auto bg-white rounded-2xl shadow-sm border border-slate-200 p-8 text-center">
+        <p class="text-6xl font-extrabold text-slate-300">403</p>
+        <h1 class="text-xl font-bold mt-2">No tienes permiso para entrar aquí</h1>
+        <p class="text-slate-500 mt-2">Sección solo disponible para administradores.</p>
+        <a
+          href="panel.php"
+          class="inline-block mt-6 bg-indigo-600 hover:bg-indigo-700 text-white font-semibold px-4 py-2.5 rounded-xl transition">
+          Volver al panel
+        </a>
+      </div>
+    </main>
+    <?php
+    require __DIR__ . '/views/footer.php';
+    exit;
+}
