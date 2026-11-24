@@ -100,9 +100,11 @@ foreach ([
     ]);
 }
 
-create_operador('Administración Demo', 'admin', 'Admin2026!', 'admin', 1);
-create_operador('Operador Demo 2', 'operador2', 'Operador2026!', 'operador', 2);
-create_operador('Operador Demo 3', 'operador3', 'Operador2026!', 'operador', 3);
+$operadoresIds = [
+    'admin'     => create_operador('Administración Demo', 'admin', 'Admin2026!', 'admin', 1),
+    'operador2' => create_operador('Operador Demo 2', 'operador2', 'Operador2026!', 'operador', 2),
+    'operador3' => create_operador('Operador Demo 3', 'operador3', 'Operador2026!', 'operador', 3),
+];
 
 prueba('T-01', 'Emitir turno genera ASE-001 en pendiente', static function () use ($serviciosIds): void {
     $turno = emitir_turno($serviciosIds['ASE']);
@@ -130,36 +132,114 @@ prueba('T-03', 'Cada servicio tiene su propia serie y mantiene orden de llegada'
     check($folios === ['ASE-001', 'ASE-002', 'CON-001'], 'La cola no conserva el orden de llegada esperado.');
 });
 
-prueba('T-06', 'No emite turno de servicio inexistente', static function (): void {
+prueba('T-06', 'No emite turno de servicio inactivo o inexistente', static function () use ($serviciosIds): void {
     debe_rechazar(
         static fn() => emitir_turno(99999),
         'Debe rechazarse emitir turno para un servicio inexistente.'
     );
-    // Pendiente ampliar T-06 con servicio inactivo al integrar HU-07
+
+    $desactivado = set_servicio_activo($serviciosIds['INS'], false);
+    check($desactivado === true, 'set_servicio_activo() debe devolver true al desactivar INS.');
+
+    debe_rechazar(
+        static fn() => emitir_turno($serviciosIds['INS']),
+        'Debe rechazarse emitir turno de un servicio inactivo.'
+    );
+
+    $reactivado = set_servicio_activo($serviciosIds['INS'], true);
+    check($reactivado === true, 'set_servicio_activo() debe devolver true al reactivar INS.');
 });
 
-prueba('T-15', 'Prefijo repetido o inválido se rechaza en BD', static function (): void {
+prueba('T-07', 'Llamar siguiente respeta el orden de llegada', static function () use ($operadoresIds): void {
+    $llamado = llamar_siguiente($operadoresIds['admin'], 1);
+    check($llamado !== null, 'llamar_siguiente() debe devolver un turno cuando hay cola.');
+    check($llamado['folio'] === 'ASE-001', 'El primer llamado debe ser ASE-001.');
+    check($llamado['estado'] === 'llamado', 'El turno llamado debe quedar en estado llamado.');
+    check((int) $llamado['operador_id'] === $operadoresIds['admin'], 'El operador_id no coincide con admin.');
+    check((int) $llamado['ventanilla'] === 1, 'La ventanilla debe ser 1.');
+    check(!empty($llamado['llamado_en']), 'Debe registrarse llamado_en.');
+
+    debe_rechazar(
+        static fn() => llamar_siguiente($operadoresIds['admin'], 1),
+        'Un operador con turno activo no debe poder llamar otro.'
+    );
+
+    $segundoLlamado = llamar_siguiente($operadoresIds['operador2'], 2);
+    check($segundoLlamado !== null && $segundoLlamado['folio'] === 'ASE-002', 'El segundo llamado debe ser ASE-002.');
+    check(array_column(cola_pendiente(), 'folio') === ['CON-001'], 'Solo debe quedar CON-001 en la cola pendiente.');
+});
+
+prueba('T-08', 'Flujo llamado -> en_atencion -> atendido y bitácora', static function () use ($operadoresIds): void {
+    $adminId = $operadoresIds['admin'];
+    $activo = turno_activo_de($adminId);
+    check($activo !== null && $activo['folio'] === 'ASE-001', 'El turno activo de admin debe ser ASE-001.');
+    $turnoId = (int) $activo['id'];
+
+    debe_rechazar(
+        static fn() => cambiar_estado($turnoId, 'atendido', $adminId),
+        'No se debe permitir pasar directo de llamado a atendido.'
+    );
+
+    $enAtencion = cambiar_estado($turnoId, 'en_atencion', $adminId);
+    check($enAtencion['estado'] === 'en_atencion', 'El turno debe pasar a en_atencion.');
+    check(!empty($enAtencion['atencion_en']), 'Debe registrarse atencion_en.');
+
+    $atendido = cambiar_estado($turnoId, 'atendido', $adminId);
+    check($atendido['estado'] === 'atendido', 'El turno debe pasar a atendido.');
+    check(!empty($atendido['cerrado_en']), 'Debe registrarse cerrado_en.');
+
+    $stmt = db()->prepare('SELECT estado_anterior, estado_nuevo, operador_id FROM atenciones WHERE turno_id = :id ORDER BY id ASC');
+    $stmt->execute([':id' => $turnoId]);
+    $bitacora = $stmt->fetchAll();
+    unset($stmt);
+
+    check(count($bitacora) === 3, 'La bitácora debe registrar exactamente 3 transiciones.');
+    $pares = array_map(static fn(array $r): array => [$r['estado_anterior'], $r['estado_nuevo']], $bitacora);
+    check(
+        $pares === [['pendiente', 'llamado'], ['llamado', 'en_atencion'], ['en_atencion', 'atendido']],
+        'Las transiciones en bitácora no coinciden.'
+    );
+    foreach ($bitacora as $row) {
+        check((int) $row['operador_id'] === $adminId, 'El operador_id en bitácora debe ser admin.');
+    }
+});
+
+prueba('T-11', 'Operar un turno inexistente se rechaza', static function () use ($operadoresIds): void {
+    debe_rechazar(
+        static fn() => cambiar_estado(99999, 'en_atencion', $operadoresIds['admin']),
+        'Debe rechazarse operar un turno inexistente.'
+    );
+});
+
+prueba('T-15', 'Prefijo repetido o inválido se rechaza', static function (): void {
+    $errRepetido = validate_servicio(['prefijo' => 'ASE', 'nombre' => 'Otro servicio', 'descripcion' => '']);
+    check(isset($errRepetido['prefijo']), 'validate_servicio() debe rechazar prefijo repetido ASE.');
+
+    $errDigitos = validate_servicio(['prefijo' => 'A1', 'nombre' => 'Con número', 'descripcion' => '']);
+    check(isset($errDigitos['prefijo']), 'validate_servicio() debe rechazar prefijo con números A1.');
+
+    $errCorto = validate_servicio(['prefijo' => 'A', 'nombre' => 'Muy corto', 'descripcion' => '']);
+    check(isset($errCorto['prefijo']), 'validate_servicio() debe rechazar prefijo corto A.');
+
+    $errLargo = validate_servicio(['prefijo' => 'ABCDE', 'nombre' => 'Muy largo', 'descripcion' => '']);
+    check(isset($errLargo['prefijo']), 'validate_servicio() debe rechazar prefijo largo ABCDE.');
+
+    $errValido = validate_servicio(['prefijo' => 'TIT', 'nombre' => 'Titulación', 'descripcion' => 'Trámites de titulación']);
+    check($errValido === [], 'validate_servicio() debe aceptar datos válidos para TIT.');
+
     debe_rechazar(
         static fn() => create_servicio(['prefijo' => 'ASE', 'nombre' => 'Duplicado']),
-        'Debe rechazarse un prefijo repetido.'
+        'Debe rechazarse en BD un prefijo repetido.'
     );
     debe_rechazar(
         static fn() => create_servicio(['prefijo' => 'A', 'nombre' => 'Muy corto']),
-        'Debe rechazarse un prefijo menor a 2 caracteres.'
+        'Debe rechazarse en BD un prefijo menor a 2 caracteres.'
     );
     debe_rechazar(
         static fn() => create_servicio(['prefijo' => 'ABCDE', 'nombre' => 'Muy largo']),
-        'Debe rechazarse un prefijo mayor a 4 caracteres.'
+        'Debe rechazarse en BD un prefijo mayor a 4 caracteres.'
     );
-    // Pendiente ampliar T-15 con validate_servicio() al integrar HU-06
 });
-
-/*
- * Pendientes de Semana 2 por integrar módulos de compañeros:
- * - T-06 (servicio inactivo -> HU-07)
- * - T-07, T-08, T-11 (-> HU-08, src/atencion.php)
- * - T-15 (validate_servicio -> HU-06, src/servicios.php)
- */
 
 $total = $pasadas + $fallidas;
 echo "\nResumen: {$pasadas}/{$total} pruebas OK (base temporal limpia)\n";
