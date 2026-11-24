@@ -75,6 +75,7 @@ filacero/
 ├── scripts/init-db.php          # Inicialización de base y datos semilla
 ├── storage/                     # Base local filacero.sqlite (ignorada por Git)
 ├── src/
+│   ├── atencion.php             # Máquina de estados y bitácora de atención
 │   ├── auth.php                 # Registro, hash de contraseñas y sesión de operador
 │   ├── bootstrap.php            # Sesión, zona horaria y carga de módulos
 │   ├── db.php                   # Conexión PDO SQLite
