@@ -16,7 +16,7 @@ En ventanillas de atención o asesorías, los visitantes suelen amontonarse porq
 - Generación de folios consecutivos por día y servicio sin duplicados.
 - Cola de turnos pendientes y máquina de estados en el panel del operador.
 - Pantalla pública de sala y métricas diarias.
-- Fuera de alcance: WebSockets, impresora de tickets, SMS, notificaciones push y APIs externas.
+- Fuera de alcance: WebSockets, impresora de tickets, SMS y notificaciones push. **No usa API externa porque la ficha no la requiere.**
 
 ## Tecnologías
 
@@ -57,6 +57,16 @@ En ventanillas de atención o asesorías, los visitantes suelen amontonarse porq
 
 > ⚠️ Son solo para desarrollo local. Si el sistema se instalara en un servidor real, hay que cambiar estas contraseñas o crear usuarios nuevos.
 
+## Pruebas
+
+Para verificar la lógica de negocio sin alterar la base local de demostración (`storage/filacero.sqlite`), ejecuta la suite automática sobre una base SQLite temporal (`FILACERO_DB_PATH`):
+
+```bash
+php tests/smoke.php
+```
+
+El detalle de los casos automáticos y manuales (incluidos casos negativos) está documentado en [`docs/pruebas.md`](docs/pruebas.md).
+
 ## Estructura del proyecto
 
 ```text
@@ -65,6 +75,7 @@ filacero/
 ├── scripts/init-db.php          # Inicialización de base y datos semilla
 ├── storage/                     # Base local filacero.sqlite (ignorada por Git)
 ├── src/
+│   ├── atencion.php             # Máquina de estados y bitácora de atención
 │   ├── auth.php                 # Registro, hash de contraseñas y sesión de operador
 │   ├── bootstrap.php            # Sesión, zona horaria y carga de módulos
 │   ├── db.php                   # Conexión PDO SQLite
@@ -74,7 +85,8 @@ filacero/
 │   ├── turnos.php               # Emisión de folios y cola de turnos pendientes
 │   └── views/                   # Encabezado, pie y badges compartidos
 ├── public/                      # Páginas accesibles desde el navegador
-└── docs/                        # Historias, modelo de datos, bocetos y entregas
+├── tests/smoke.php              # Pruebas automáticas sobre SQLite temporal
+└── docs/                        # Historias, modelo de datos, pruebas, bocetos y entregas
 ```
 
 ## Integrantes
