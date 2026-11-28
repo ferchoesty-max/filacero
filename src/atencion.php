@@ -64,7 +64,7 @@ function registrar_atencion(
 }
 
 // Toma el siguiente turno pendiente y lo asigna al operador y ventanilla especificados.
-function llamar_siguiente(int $operadorId, int $ventanilla): ?array
+function llamar_siguiente(int $operadorId, int $ventanilla, ?int $servicioId = null): ?array
 {
     if (turno_activo_de($operadorId) !== null) {
         throw new ReglaNegocioException('Ya tienes un turno activo en tu ventanilla. Termínalo o cancélalo antes de llamar otro.');
@@ -73,13 +73,18 @@ function llamar_siguiente(int $operadorId, int $ventanilla): ?array
     $pdo = db();
     $ahora = now();
 
-    $stmtSelect = $pdo->prepare(
-        "SELECT id FROM turnos
-         WHERE fecha = :hoy AND estado = 'pendiente'
-         ORDER BY id ASC
-         LIMIT 1"
-    );
-    $stmtSelect->execute([':hoy' => today()]);
+    $sqlSelect = "SELECT id FROM turnos
+                  WHERE fecha = :hoy AND estado = 'pendiente'";
+    $paramsSelect = [':hoy' => today()];
+
+    if ($servicioId !== null) {
+        $sqlSelect .= " AND servicio_id = :servicio_id";
+        $paramsSelect[':servicio_id'] = $servicioId;
+    }
+    $sqlSelect .= " ORDER BY id ASC LIMIT 1";
+
+    $stmtSelect = $pdo->prepare($sqlSelect);
+    $stmtSelect->execute($paramsSelect);
     $siguiente = $stmtSelect->fetch(PDO::FETCH_ASSOC);
 
     if (!$siguiente) {
@@ -113,7 +118,7 @@ function llamar_siguiente(int $operadorId, int $ventanilla): ?array
 }
 
 // Cambia el estado de un turno validando existencia, transiciones permitidas y concurrencia.
-function cambiar_estado(int $turnoId, string $nuevoEstado, int $operadorId): array
+function cambiar_estado(int $turnoId, string $nuevoEstado, int $operadorId, ?string $motivo = null): array
 {
     $turno = find_turno($turnoId);
 
@@ -125,6 +130,16 @@ function cambiar_estado(int $turnoId, string $nuevoEstado, int $operadorId): arr
 
     if (!transicion_permitida($estadoActual, $nuevoEstado)) {
         throw new ReglaNegocioException("Transición no permitida: no se puede pasar de '$estadoActual' a '$nuevoEstado'.");
+    }
+
+    $motivoLimpio = null;
+    if ($nuevoEstado === 'cancelado' && $motivo !== null) {
+        $recortado = trim($motivo);
+        if ($recortado !== '') {
+            $motivoLimpio = function_exists('mb_substr')
+                ? mb_substr($recortado, 0, 120, 'UTF-8')
+                : substr($recortado, 0, 120);
+        }
     }
 
     $ahora = now();
@@ -139,9 +154,13 @@ function cambiar_estado(int $turnoId, string $nuevoEstado, int $operadorId): arr
     if ($nuevoEstado === 'en_atencion') {
         $camposExtra = ', atencion_en = :momento';
         $params[':momento'] = $ahora;
-    } elseif ($nuevoEstado === 'atendido' || $nuevoEstado === 'cancelado') {
+    } elseif ($nuevoEstado === 'atendido') {
         $camposExtra = ', cerrado_en = :momento';
         $params[':momento'] = $ahora;
+    } elseif ($nuevoEstado === 'cancelado') {
+        $camposExtra = ', cerrado_en = :momento, motivo_cancelacion = :motivo';
+        $params[':momento'] = $ahora;
+        $params[':motivo']  = $motivoLimpio;
     }
 
     $sql = "UPDATE turnos
@@ -155,7 +174,7 @@ function cambiar_estado(int $turnoId, string $nuevoEstado, int $operadorId): arr
         throw new ReglaNegocioException('No se pudo actualizar el turno porque su estado cambió recientemente.');
     }
 
-    registrar_atencion($turnoId, $operadorId, $estadoActual, $nuevoEstado);
+    registrar_atencion($turnoId, $operadorId, $estadoActual, $nuevoEstado, $motivoLimpio);
 
     $actualizado = find_turno($turnoId);
     if ($actualizado === null) {
