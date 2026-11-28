@@ -13,10 +13,12 @@ $turnoId  = input_id($_POST, 'turno_id');
 try {
     if ($accion === 'llamar') {
         $ventanilla = (int) ($operador['ventanilla'] ?? 1);
-        $turno = llamar_siguiente((int) $operador['id'], $ventanilla);
+        $servicioRaw = input_id($_POST, 'servicio_id');
+        $servicioId  = $servicioRaw > 0 ? $servicioRaw : null;
+        $turno = llamar_siguiente((int) $operador['id'], $ventanilla, $servicioId);
 
         if ($turno === null) {
-            set_flash('No hay turnos pendientes en la cola por el momento.', 'success');
+            set_flash('No hay turnos en espera. La cola está vacía.', 'info');
         } else {
             set_flash('Llamando al turno ' . $turno['folio'] . ' a ventanilla ' . $ventanilla . '.', 'success');
         }
@@ -25,7 +27,17 @@ try {
             throw new ReglaNegocioException('El turno no existe');
         }
 
-        $turnoActualizado = cambiar_estado($turnoId, $accion, (int) $operador['id']);
+        $motivo = null;
+        if ($accion === 'cancelado') {
+            $motivoRaw = isset($_POST['motivo']) && is_string($_POST['motivo']) ? trim($_POST['motivo']) : '';
+            $longitud = function_exists('mb_strlen') ? mb_strlen($motivoRaw, 'UTF-8') : strlen($motivoRaw);
+            if ($longitud > 120) {
+                throw new ReglaNegocioException('El motivo de cancelación no puede exceder 120 caracteres.');
+            }
+            $motivo = $motivoRaw !== '' ? $motivoRaw : null;
+        }
+
+        $turnoActualizado = cambiar_estado($turnoId, $accion, (int) $operador['id'], $motivo);
 
         $mensajes = [
             'en_atencion' => 'Atención iniciada para el folio ' . $turnoActualizado['folio'] . '.',
