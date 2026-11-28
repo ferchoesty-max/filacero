@@ -204,11 +204,57 @@ prueba('T-08', 'Flujo llamado -> en_atencion -> atendido y bitácora', static fu
     }
 });
 
+prueba('T-09', 'No se puede regresar un turno atendido', static function () use ($operadoresIds): void {
+    $adminId = $operadoresIds['admin'];
+    $stmt = db()->prepare("SELECT id FROM turnos WHERE folio = 'ASE-001' LIMIT 1");
+    $stmt->execute();
+    $atendidoId = (int) $stmt->fetchColumn();
+    check($atendidoId > 0, 'No se encontró ASE-001 en estado atendido.');
+
+    foreach (['pendiente', 'llamado', 'en_atencion', 'cancelado'] as $destino) {
+        debe_rechazar(
+            static fn() => cambiar_estado($atendidoId, $destino, $adminId),
+            "No se debe permitir cambiar un turno atendido a {$destino}."
+        );
+    }
+});
+
+prueba('T-10', 'Llamar siguiente nunca toma un cancelado o atendido', static function () use ($operadoresIds, $serviciosIds): void {
+    $adminId = $operadoresIds['admin'];
+    $becId   = $serviciosIds['BEC'];
+
+    // Emitir un turno de Becas (BEC-001), llamarlo y cancelarlo con motivo
+    $bec1 = emitir_turno($becId);
+    $llamado = llamar_siguiente($adminId, 1, $becId);
+    check($llamado !== null && $llamado['folio'] === $bec1['folio'], 'Debe llamar BEC-001 al filtrar por Becas.');
+
+    $cancelado = cambiar_estado((int) $bec1['id'], 'cancelado', $adminId, 'No se presentó');
+    check($cancelado['estado'] === 'cancelado', 'BEC-001 debe quedar cancelado.');
+    check($cancelado['motivo_cancelacion'] === 'No se presentó', 'Debe guardarse el motivo de cancelación.');
+
+    // Como no hay más turnos pendientes de Becas (aunque haya cancelado y atendido), llamar por Becas devuelve null
+    $vacioBec = llamar_siguiente($adminId, 1, $becId);
+    check($vacioBec === null, 'No debe llamar turnos cancelados ni atendidos al filtrar por servicio.');
+});
+
 prueba('T-11', 'Operar un turno inexistente se rechaza', static function () use ($operadoresIds): void {
     debe_rechazar(
         static fn() => cambiar_estado(99999, 'en_atencion', $operadoresIds['admin']),
         'Debe rechazarse operar un turno inexistente.'
     );
+});
+
+prueba('T-13', 'Cola vacía no genera error', static function () use ($operadoresIds): void {
+    $adminId = $operadoresIds['admin'];
+
+    // Consumir el único turno pendiente restante (CON-001)
+    $con1 = llamar_siguiente($adminId, 1);
+    check($con1 !== null && $con1['folio'] === 'CON-001', 'Debe tomar CON-001.');
+    cambiar_estado((int) $con1['id'], 'cancelado', $adminId, 'Prueba de vaciado');
+
+    // Con la cola completamente vacía, llamar_siguiente debe devolver null sin lanzar excepción
+    $resultado = llamar_siguiente($adminId, 1);
+    check($resultado === null, 'llamar_siguiente() debe devolver null cuando la cola está vacía.');
 });
 
 prueba('T-15', 'Prefijo repetido o inválido se rechaza', static function (): void {

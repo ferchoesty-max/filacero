@@ -9,6 +9,7 @@ $operador    = operador_actual();
 $turnoActivo = turno_activo_de((int) $operador['id']);
 $cola        = cola_pendiente();
 $totalEnFila = count($cola);
+$servicios   = all_servicios(true);
 
 $pageTitle = 'Panel del operador';
 require __DIR__ . '/../src/views/header.php';
@@ -35,9 +36,28 @@ require __DIR__ . '/../src/views/header.php';
                         <p class="text-sm text-slate-500">No tienes ningún turno asignado en este momento.</p>
                     </div>
 
-                    <form method="post" action="turno-accion.php">
+                    <form method="post" action="turno-accion.php" class="space-y-4">
                         <?= csrf_field() ?>
                         <input type="hidden" name="accion" value="llamar">
+
+                        <div>
+                            <label for="servicio_id" class="block text-xs font-semibold uppercase tracking-wider text-slate-500 mb-1.5">
+                                Filtrar llamado por servicio
+                            </label>
+                            <select
+                                id="servicio_id"
+                                name="servicio_id"
+                                class="w-full rounded-xl border border-slate-300 bg-white px-3 py-2.5 text-sm text-slate-700 focus:border-indigo-500 focus:outline-none"
+                            >
+                                <option value="">Cualquier servicio</option>
+                                <?php foreach ($servicios as $servicio): ?>
+                                    <option value="<?= e((string) $servicio['id']) ?>">
+                                        <?= e($servicio['prefijo']) ?> — <?= e($servicio['nombre']) ?>
+                                    </option>
+                                <?php endforeach; ?>
+                            </select>
+                        </div>
+
                         <button
                             type="submit"
                             class="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-semibold px-4 py-2.5 rounded-xl transition cursor-pointer"
@@ -90,10 +110,30 @@ require __DIR__ . '/../src/views/header.php';
                             </form>
                         <?php endif; ?>
 
-                        <form method="post" action="turno-accion.php" data-confirm="¿Seguro que deseas cancelar el turno <?= e($turnoActivo['folio']) ?>?">
+                        <form
+                            method="post"
+                            action="turno-accion.php"
+                            data-confirm="¿Seguro que deseas cancelar el turno <?= e($turnoActivo['folio']) ?>?"
+                            class="pt-3 border-t border-slate-200 space-y-2.5"
+                        >
                             <?= csrf_field() ?>
                             <input type="hidden" name="accion" value="cancelado">
                             <input type="hidden" name="turno_id" value="<?= e((string) $turnoActivo['id']) ?>">
+
+                            <div>
+                                <label for="motivo" class="block text-xs font-medium text-slate-600 mb-1">
+                                    Motivo de cancelación (opcional, máx. 120 caracteres)
+                                </label>
+                                <input
+                                    type="text"
+                                    id="motivo"
+                                    name="motivo"
+                                    maxlength="120"
+                                    placeholder="Ej. No se presentó en ventanilla"
+                                    class="w-full rounded-xl border border-slate-300 px-3 py-2 text-sm text-slate-700 placeholder:text-slate-400 focus:border-rose-500 focus:outline-none"
+                                >
+                            </div>
+
                             <button
                                 type="submit"
                                 class="w-full bg-rose-600 hover:bg-rose-700 text-white font-medium px-4 py-2 rounded-xl transition cursor-pointer"
